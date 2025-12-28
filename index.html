@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS-X | Private AI Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #050505; color: #e5e7eb; font-family: sans-serif; }
+        .glass { background: rgba(17, 17, 17, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .input-dark { background: #0a0a0a; border: 1px solid #1f2937; color: white; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+    <header class="p-5 border-b border-white/5 glass flex justify-between items-center">
+        <span class="font-bold tracking-tighter text-blue-500 text-xl">NEXUS-X <span class="text-white text-xs opacity-50 font-mono">v3.0</span></span>
+        <div class="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-[10px] text-blue-400 font-mono">STATUS: CLOUD_ACTIVE</div>
+    </header>
+
+    <main id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4"></main>
+
+    <footer class="p-6 glass">
+        <div class="max-w-4xl mx-auto flex gap-3">
+            <input type="text" id="prompt" class="flex-1 input-dark p-4 rounded-2xl text-sm outline-none focus:border-blue-500" placeholder="Kirim instruksi ke NEXUS-X...">
+            <button onclick="send()" class="bg-blue-600 px-6 rounded-2xl font-bold hover:bg-blue-700 transition-all text-white">➜</button>
+        </div>
+    </footer>
+
+    <script>
+        async function send() {
+            const p = document.getElementById('prompt');
+            const b = document.getElementById('chat-box');
+            const txt = p.value;
+            if(!txt) return;
+            p.value = '';
+
+            // User Chat
+            b.innerHTML += `<div class="flex justify-end"><div class="bg-blue-600/20 border border-blue-500/30 p-4 rounded-2xl max-w-[80%] text-sm">${txt}</div></div>`;
+            
+            // Loading
+            const loadId = Date.now();
+            b.innerHTML += `<div id="${loadId}" class="flex justify-start"><div class="glass p-4 rounded-2xl text-sm text-gray-500 animate-pulse italic">Thinking...</div></div>`;
+            b.scrollTop = b.scrollHeight;
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: txt })
+                });
+                const data = await res.json();
+                document.getElementById(loadId).remove();
+                
+                // AI Response
+                b.innerHTML += `<div class="flex justify-start"><div class="glass p-4 rounded-2xl max-w-[80%] text-sm text-gray-300 border-l-2 border-blue-500">${data.result}</div></div>`;
+            } catch (e) {
+                document.getElementById(loadId).innerText = "Error: Neural link broken.";
+            }
+            b.scrollTop = b.scrollHeight;
+        }
+    </script>
+</body>
+</html>
