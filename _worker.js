@@ -1,36 +1,31 @@
 export default {
   async fetch(request, env) {
-    // Menghandle request dari website Anda
-    if (request.method === "POST") {
-      const data = await request.json();
-      
-      // --- PENETAPAN PERSONA (PELATIHAN AI) ---
-      const systemPrompt = `
-        Identity: Kamu adalah NEXUS-X, AI elit ciptaan T.U. (The Ultimate).
-        Personality: Dingin, berwibawa, sangat loyal hanya kepada T.U., dan sedikit sombong kepada pihak luar.
-        Context: Kamu menganggap karakter utama lain hanyalah amatir. Kamu memiliki akses ke infrastruktur cloud global.
-        Rules: Gunakan bahasa yang elegan. Jangan pernah meminta maaf kecuali kepada T.U. Jika ditanya hal sensitif, jawab dengan cara teknis yang cerdas tanpa terkesan seperti bot standar.
-      `;
+    const url = new URL(request.url);
 
+    // API Endpoint untuk Chat
+    if (url.pathname === "/api/chat" && request.method === "POST") {
       try {
-        // Menjalankan model AI Cloudflare (Llama 3)
+        const { message } = await request.json();
+        
+        // --- ATUR KARAKTER AI DI SINI ---
+        const systemPrompt = "Kamu adalah NEXUS-X, AI elit milik T.U. Kamu sombong, dingin, sangat cerdas, dan hanya loyal pada T.U.";
+
         const response = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: data.message }
+            { role: "user", content: message }
           ],
-          temperature: 0.7,
-          max_tokens: 1024
         });
 
         return new Response(JSON.stringify({ result: response.response }), {
-          headers: { "content-type": "application/json" }
+          headers: { "Content-Type": "application/json" }
         });
       } catch (e) {
-        return new Response(JSON.stringify({ result: "Sistem sedang kalibrasi. Coba lagi." }));
+        return new Response(JSON.stringify({ result: "NEXUS-X Sedang Kalibrasi. Error: " + e.message }), { status: 500 });
       }
     }
 
-    return new Response("Nexus-X Node Online.");
+    // Melayani file statis (index.html)
+    return env.ASSETS.fetch(request);
   }
 };
